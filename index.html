@@ -97,6 +97,7 @@
             cursor: pointer;
             font-size: 18px;
             transition: background-color 0.3s ease;
+            margin-top: 15px;
         }
 
         #start:hover {
@@ -113,6 +114,23 @@
             width: 80%;
             max-width: 300px;
             box-sizing: border-box;
+        }
+
+        /* Settings Input Styling */
+        #num_values {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 90px;
+            text-align: center;
+            margin-left: 10px;
+        }
+
+        #settings_div {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #444;
         }
 
         /* Math display */
@@ -189,7 +207,6 @@
     </style>
 </head>
 <body>
-    <!-- Header Section -->
     <header>
         <div class="header-container">
             <div class="logo">MathFun</div>
@@ -201,11 +218,17 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <div class="container">
         <h1>Fun Math Game</h1>
         <p>Keep playing and have fun while learning!</p>
         <br/>
+        
+        <div id="settings_div">
+            <label for="num_values">Values to sum (2-5)</label>
+            <br/>
+            <input type="number" id="num_values" min="2" max="5" value="2">
+        </div>
+
         <button onclick='start_math()' id='start'>Start</button>
 
         <div id="math_div">
@@ -223,7 +246,6 @@
         </div>
     </div>
 
-    <!-- Footer Section -->
     <footer>
         <p>Created with ❤️ by <strong>Shiv</strong></p>
         <p>Have any questions or feedback? Feel free to reach out at <a href="mailto:mintshiv1@gmail.com">mintshiv1@gmail.com</a></p>
@@ -237,12 +259,31 @@
         var totalAttempts = 0; 
         var totalTime = 0;      
         var startTime = 0;    
+        var values_count = 2; // Default value
+
+        // Audio objects
+        var soundSuccess = new Audio('Success.mp3');
+        var soundWrong = new Audio('Wrong.mp3');
 
         function start_math() {
             console.log('Pressed Start');
+            
+            // Get value from input
+            var inputVal = document.getElementById('num_values').value;
+            values_count = parseInt(inputVal);
+
+            // Validation to keep it between 2 and 5
+            if (isNaN(values_count) || values_count < 2) values_count = 2;
+            if (values_count > 5) values_count = 5;
+
             generate_number();
+            
             document.getElementById('value').innerText = list.join(' + ') + ' = ?'; 
+            
+            // Hide Start button and Settings
             document.getElementById('start').style.display = 'none';
+            document.getElementById('settings_div').style.display = 'none';
+            
             document.getElementById('math_div').style.display = 'block';
             startTime = Date.now();  // Record the time when the question appears
             return console.log('Completed');
@@ -253,41 +294,44 @@
             var input_value = document.getElementById("input").value;
             if (input_value === "") return;  // Skip if input is empty
 
-
             var endTime = Date.now();
-            //var timeTaken = (endTime - startTime) / 1000;  // Time in seconds
-            totalTime =(endTime - startTime) / 1000;//+= timeTaken;  // Add time taken to the total time
+            totalTime += (endTime - startTime) / 1000; // Add accumulated time
 
             if (parseInt(input_value) === total_sum) {
+                // Correct Answer
+                soundSuccess.currentTime = 0; // Reset audio to start
+                soundSuccess.play().catch(e => console.log("Audio play error: ", e));
+
                 correctAnswers++;
-		totalAttempts++;
+                totalAttempts++;
                 updateStats();
-		
+        
                 document.getElementById("input").value = "";
                 document.getElementById('h2_f').innerText = "Correct!";
                 document.getElementById('h2_f').style.color = "green";
 
-		generate_number()
-		
+                generate_number();
+        
             } else if (parseInt(input_value) > total_sum) {
-		totalAttempts++;
-		updateStats();
-		
+                // Wrong Answer (Input > Sum)
+                soundWrong.currentTime = 0; // Reset audio to start
+                soundWrong.play().catch(e => console.log("Audio play error: ", e));
+
+                totalAttempts++;
+                updateStats();
+        
                 document.getElementById("input").value = "";
-                document.getElementById('h2_f').innerText = "!Wrong Answer Correct :"+total_sum;
+                document.getElementById('h2_f').innerText = "!Wrong Answer Correct :" + total_sum;
                 document.getElementById('h2_f').style.color = "red";
 
-	        generate_number()         }
-
-
-
-            
+                generate_number();         
+            }
         }
 
         function generate_number() {
-            
             list = [];
-            for (var i = 0; i < 5; i++) {
+            // Use values_count set by the user input
+            for (var i = 0; i < values_count; i++) {
                 var val = Math.floor(Math.random() * 81 + 20); 
                 list.push(val);
             }
@@ -295,15 +339,13 @@
             total_sum = list.reduce((a, b) => a + b, 0); // Sum up all numbers in the list
             document.getElementById('value').innerText = list.join(' + ') + ' = ?'; 
 
-setTimeout(function() {
-    document.getElementById('h2_f').innerText = "Enter sum of above values";
+            setTimeout(function() {
+                document.getElementById('h2_f').innerText = "Enter sum of above values";
                 document.getElementById('h2_f').style.color = "#555";
+            }, 450); 
 
-}, 450); 
-
-            //startTime = Date.now();  // Reset the time for the next question
+            startTime = Date.now();  // Reset the time for the next question
         }
-
        
         function updateStats() {
             var accuracy = (correctAnswers / totalAttempts) * 100 || 0;
@@ -320,7 +362,7 @@ setTimeout(function() {
 
         // Home Link functionality: Scroll back to top of page (simulates going home)
         document.getElementById('home').addEventListener('click', function() {
-            window.scrollTo(0, 0);
+            window.location.reload(); // Reload to reset settings
         });
 
         // About Link functionality: Show description about the website
